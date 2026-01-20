@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:plebqr_india/component_library/component_library.dart';
 import 'package:plebqr_india/form_fields/form_fields.dart';
 import 'package:plebqr_india/features/payment_flow/src/widgets/qr_scanner_screen.dart';
+import 'package:plebqr_india/utils/utils.dart';
 
 class Step1UpiEntry extends StatefulWidget {
   const Step1UpiEntry({
@@ -56,18 +57,78 @@ class _Step1UpiEntryState extends State<Step1UpiEntry> {
       MaterialPageRoute(builder: (context) => const QrScannerScreen()),
     );
 
-    if (result != null && mounted) {
-      _textEditingController.text = result;
-      widget.onUpiIdChanged(result);
+    if (result == null || !mounted) {
+      return;
+    }
+
+    // Parse the scanned QR code
+    final parseResult = UpiParser.parseUpiUrl(result);
+
+    switch (parseResult) {
+      case UpiParseSuccess(upiId: final upiId):
+        // Successfully extracted UPI ID from static QR code
+        _textEditingController.text = upiId;
+        widget.onUpiIdChanged(upiId);
+      case UpiParseDynamicQrCode():
+        // Show error for dynamic QR code
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Dynamic QR codes are not supported. '
+                'Please ask the merchant for a static UPI QR code '
+                'or enter their UPI ID manually.',
+              ),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      case UpiParseInvalidFormat(message: final message):
+        // Show error for invalid format
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invalid QR code format: $message'),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
     }
   }
 
   Future<void> _handlePaste() async {
     final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
     final pastedText = clipboardData?.text ?? '';
-    if (pastedText.isNotEmpty && mounted) {
-      _textEditingController.text = pastedText;
-      widget.onUpiIdChanged(pastedText);
+    if (pastedText.isEmpty || !mounted) {
+      return;
+    }
+
+    // Parse the pasted text to see if it's a UPI URL
+    final parseResult = UpiParser.parseUpiUrl(pastedText);
+
+    switch (parseResult) {
+      case UpiParseSuccess(upiId: final upiId):
+        // Successfully extracted UPI ID from static QR code
+        _textEditingController.text = upiId;
+        widget.onUpiIdChanged(upiId);
+      case UpiParseDynamicQrCode():
+        // Show error for dynamic QR code
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Dynamic QR codes are not supported. '
+                'Please enter a static UPI ID manually.',
+              ),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      case UpiParseInvalidFormat():
+        // If it's not a UPI URL, treat it as plain text (might be a UPI ID)
+        // The form validation will catch if it's invalid
+        _textEditingController.text = pastedText;
+        widget.onUpiIdChanged(pastedText);
     }
   }
 
