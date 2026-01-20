@@ -1,0 +1,23 @@
+identifier: com.plebqr_india.app
+name: PlebQR India
+summary: Pay Indian merchants using Bitcoin Lightning Network
+description: |
+  A mobile application that enables users to pay Indian merchants using Bitcoin Lightning Network. 
+  Users scan a UPI QR code, enter the amount in INR, and pay via Lightning invoice. The payment is automatically 
+  converted and sent directly to the merchant's bank account.
+
+  ## Features
+  - UPI QR Code Scanning
+  - INR to Bitcoin Lightning conversion
+  - Real-time payment status tracking
+  - Automatic merchant settlement
+  - Transaction receipt display
+
+icon: android/app/src/main/ic_launcher-playstore.png
+license: MIT
+tags: bitcoin lightning payments india upi
+assets:
+  - build/app/outputs/flutter-apk/app-release.apk
+blossom_servers:
+  - https://cdn.zapstore.dev
+  - https://blossom.band
